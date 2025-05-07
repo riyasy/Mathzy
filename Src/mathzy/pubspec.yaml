@@ -1,0 +1,22 @@
+name: mathzy
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_mlkit_digital_ink_recognition: ^0.14.1
+  confetti: ^0.7.0
+  google_fonts: ^6.2.1 
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
