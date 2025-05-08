@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:mathzy/constants.dart';
+// import 'package:mathzy/constants.dart'; // Removed as animation constants are no longer used
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 // --- Voice Input Control ---
@@ -25,7 +25,6 @@ class _VoiceInputControlState extends State<VoiceInputControl> {
   bool _isSpeechAvailable = false;
   bool _isListening = false;
   String _currentVoiceText = "";
-  String _lastSubmittedText = "";
 
   @override
   void initState() {
@@ -51,7 +50,7 @@ class _VoiceInputControlState extends State<VoiceInputControl> {
   @override
   void dispose() {
     _speech.stop();
-    _speech.cancel();
+    _speech.cancel(); // Ensure all resources are released
     super.dispose();
   }
 
@@ -70,7 +69,12 @@ class _VoiceInputControlState extends State<VoiceInputControl> {
         if (mounted) {
           setState(() {
             _isListening = false;
-            _isSpeechAvailable = false;
+            // Consider setting _isSpeechAvailable to false too,
+            // as an error might mean the service is unusable.
+            // For now, we reflect the error primarily through _isListening.
+            // If initialize() itself failed, _isSpeechAvailable would be false from its result.
+            // This onError is for subsequent errors.
+             _isSpeechAvailable = false; // If a persistent error occurs, speech might not be available
           });
         }
       },
@@ -125,33 +129,19 @@ class _VoiceInputControlState extends State<VoiceInputControl> {
         String recognized = result.recognizedWords;
         if (mounted) setState(() => _currentVoiceText = recognized);
 
-        if (result.finalResult && recognized.isNotEmpty) {
-          print("VoiceInputControl Final Result: '$recognized'");
-          if (mounted &&
-              _currentVoiceText != _lastSubmittedText &&
-              widget.isActive) {
-            String processed = _processVoiceInput(_currentVoiceText);
-            if (processed != "?" && processed.isNotEmpty) {
-              print("VoiceInputControl Submitting: '$processed'");
-              _lastSubmittedText = _currentVoiceText;
-              widget.onSubmit(processed);
-            } else {
-              print(
-                "VoiceInputControl Processed to empty or '?', not submitting.",
-              );
-              // Reset _lastSubmittedText if processing failed?
-              _lastSubmittedText =
-                  ""; // Allow retry with potentially same raw input
-            }
+        if (recognized.isNotEmpty) { // Process on final result
+          print("VoiceInputControl Recognized (final): '$recognized'");
+          String processed = _processVoiceInput(_currentVoiceText);
+          if (processed != "?" && processed.isNotEmpty) {
+            print("VoiceInputControl Submitting: '$processed'");
+            widget.onSubmit(processed);
+            // Optionally clear current text after submission, or let it be overwritten by next recognition
+            setState(() => _currentVoiceText = "");
           }
+        } else if (recognized.isNotEmpty) {
+           print("VoiceInputControl Recognized (interim): '$recognized'");
         }
       },
-      listenFor: kListenForDuration,
-      pauseFor: kPauseForDuration,
-      localeId: 'en_US',
-      partialResults: true,
-      cancelOnError: true,
-      onDevice: true,
     );
   }
 
@@ -160,67 +150,7 @@ class _VoiceInputControlState extends State<VoiceInputControl> {
       await _speech.stop();
       print("VoiceInputControl stopped listening.");
     }
-    // onStatus will update _isListening state
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListeningBlobIndicator(
-      isListening: _isListening,
-      isSpeechAvailable: _isSpeechAvailable,
-      currentText: _currentVoiceText,
-    );
-  }
-}
-
-// --- Listening Blob Indicator Widget ---
-class ListeningBlobIndicator extends StatefulWidget {
-  final bool isListening;
-  final bool isSpeechAvailable;
-  final String currentText;
-  const ListeningBlobIndicator({
-    super.key,
-    required this.isListening,
-    required this.isSpeechAvailable,
-    required this.currentText,
-  });
-  @override
-  State<ListeningBlobIndicator> createState() => _ListeningBlobIndicatorState();
-}
-
-class _ListeningBlobIndicatorState extends State<ListeningBlobIndicator>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: kListeningBlobAnimationDuration,
-    );
-    _scaleAnimation = Tween<double>(begin: 0.7, end: 1.1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.elasticInOut),
-    );
-    if (widget.isListening) _animationController.repeat(reverse: true);
-  }
-
-  @override
-  void didUpdateWidget(ListeningBlobIndicator oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isListening != oldWidget.isListening) {
-      if (widget.isListening) {
-        _animationController.repeat(reverse: true);
-      } else {
-        _animationController.stop();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
+    // onStatus callback will update _isListening state
   }
 
   @override
@@ -229,160 +159,69 @@ class _ListeningBlobIndicatorState extends State<ListeningBlobIndicator>
       color: Colors.grey[200],
       width: double.infinity,
       height: double.infinity,
+      padding: const EdgeInsets.all(16.0),
       child: Center(
-        child:
-            !widget.isSpeechAvailable
-                ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    /* Error message */
-                    Icon(Icons.mic_off, size: 80, color: Colors.grey[400]),
-                    SizedBox(height: 10),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Text(
-                        "Voice input unavailable.",
-                        style: TextStyle(fontSize: 16, color: Colors.redAccent),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                )
-                : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (widget.isListening)
-                      ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withValues(alpha:0.8),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.red.withValues(alpha:0.4),
-                                blurRadius: 25,
-                                spreadRadius: 8,
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.graphic_eq,
-                            color: Colors.white,
-                            size: 60,
-                          ),
-                        ),
-                      )
-                    else
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          /* Idle message */
-                          Icon(
-                            Icons.mic_none,
-                            size: 80,
-                            color: Colors.grey[400],
-                          ),
-                          SizedBox(height: 10),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20.0,
-                            ),
-                            child: Text(
-                              "Voice input mode.\nListening starts automatically.",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
-                      ),
-                    SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        widget.isListening
-                            ? (widget.currentText.isNotEmpty
-                                ? '"${widget.currentText}"'
-                                : "Listening...")
-                            : "",
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.blueGrey,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'Speech Available: $_isSpeechAvailable',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: _isSpeechAvailable ? Colors.green : Colors.red),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Is Listening: $_isListening',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: _isListening ? Colors.blue : Colors.orange),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Current Voice Text: "${_currentVoiceText.isEmpty ? "---" : _currentVoiceText}"',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 20),
+            // Contextual status message
+            if (!_isSpeechAvailable)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text(
+                  "Voice input is currently unavailable. Please check microphone permissions or network connection.",
+                  style: TextStyle(fontSize: 16, color: Colors.redAccent),
+                  textAlign: TextAlign.center,
                 ),
+              )
+            else if (_isListening)
+              Text(
+                _currentVoiceText.isNotEmpty ? 'Processing: "${_currentVoiceText}"' : "Listening...",
+                style: TextStyle(fontSize: 16, color: Colors.blue, fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center,
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text(
+                  widget.isActive
+                      ? "Voice input active. Waiting for trigger to listen."
+                      : "Voice input is idle.",
+                  style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// --- Pulsing Dot Indicator Widget (for top bar) ---
-class ListeningDotIndicator extends StatefulWidget {
-  final bool isListening;
-  const ListeningDotIndicator({super.key, required this.isListening});
-  @override
-  State<ListeningDotIndicator> createState() => _ListeningDotIndicatorState();
-}
-
-class _ListeningDotIndicatorState extends State<ListeningDotIndicator>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _opacityAnimation;
-  @override
-  void initState() {
-    /* ... as before ... */
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: kPulsingDotAnimationDuration,
-    );
-    _opacityAnimation = Tween<double>(
-      begin: 0.3,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-    if (widget.isListening) {
-      _controller.repeat(reverse: true);
-    } else {
-      _controller.value = 0.3;
-    }
-  }
-
-  @override
-  void didUpdateWidget(ListeningDotIndicator oldWidget) {
-    /* ... as before ... */
-    super.didUpdateWidget(oldWidget);
-    if (widget.isListening != oldWidget.isListening) {
-      if (widget.isListening) {
-        _controller.repeat(reverse: true);
-      } else {
-        _controller.stop();
-        _controller.animateTo(0.3, duration: Duration(milliseconds: 100));
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _opacityAnimation,
-      child: Icon(Icons.circle, size: 12, color: Colors.redAccent),
-    );
-  }
-}
+// Removed ListeningBlobIndicator class
+// Removed ListeningDotIndicator class
