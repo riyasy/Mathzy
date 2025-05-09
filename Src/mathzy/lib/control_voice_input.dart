@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-// import 'package:mathzy/constants.dart'; // Removed as animation constants are no longer used
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 // --- Voice Input Control ---
@@ -201,7 +200,7 @@ class _VoiceInputControlState extends State<VoiceInputControl> {
               )
             else if (_isListening)
               Text(
-                _currentVoiceText.isNotEmpty ? 'Processing: "${_currentVoiceText}"' : "Listening...",
+                _currentVoiceText.isNotEmpty ? 'Processing: "$_currentVoiceText"' : "Listening...",
                 style: TextStyle(fontSize: 16, color: Colors.blue, fontStyle: FontStyle.italic),
                 textAlign: TextAlign.center,
               )
@@ -223,5 +222,3 @@ class _VoiceInputControlState extends State<VoiceInputControl> {
   }
 }
 
-// Removed ListeningBlobIndicator class
-// Removed ListeningDotIndicator class
