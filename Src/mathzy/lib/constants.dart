@@ -12,4 +12,4 @@ const Duration kPulsingDotAnimationDuration = Duration(milliseconds: 700);
 const Duration kStopwatchTickDuration = Duration(milliseconds: 50);
 // --- END DURATION CONSTANTS ---
 
-const int kTargetCorrectAnswers = 2;
+const int kTargetCorrectAnswers = 10;
