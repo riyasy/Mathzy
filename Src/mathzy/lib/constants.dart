@@ -8,7 +8,8 @@ const Duration kConfettiDuration = Duration(seconds: 1);
 const Duration kListenForDuration = Duration(minutes: 1);
 const Duration kPauseForDuration = Duration(seconds: 2);
 const Duration kListeningBlobAnimationDuration = Duration(milliseconds: 700);
-const Duration kPulsingDotAnimationDuration = Duration(
-  milliseconds: 700,
-); // Defined
+const Duration kPulsingDotAnimationDuration = Duration(milliseconds: 700);
+const Duration kStopwatchTickDuration = Duration(milliseconds: 50);
 // --- END DURATION CONSTANTS ---
+
+const int kTargetCorrectAnswers = 10;

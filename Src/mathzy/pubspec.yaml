@@ -15,6 +15,7 @@ dependencies:
   speech_to_text: ^7.0.0
   shared_preferences: ^2.2.2 
   intl: ^0.18.1        
+  country_code_picker: ^3.0.0 
 
 dev_dependencies:
   flutter_test:

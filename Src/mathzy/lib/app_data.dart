@@ -11,31 +11,3 @@ final List<IconData> kPlaceholderAvatars = [
 ];
 
 
-class Country {
-  final String name;
-  final String code; // ISO 3166-1 alpha-2 code
-  final String flagEmoji;
-
-  Country({required this.name, required this.code, required this.flagEmoji});
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Country &&
-          runtimeType == other.runtimeType &&
-          code == other.code;
-
-  @override
-  int get hashCode => code.hashCode;
-}
-
-final List<Country> kAppCountries = [
-  Country(name: "United States", code: "US", flagEmoji: "🇺🇸"),
-  Country(name: "India", code: "IN", flagEmoji: "🇮🇳"),
-  Country(name: "Canada", code: "CA", flagEmoji: "🇨🇦"),
-  Country(name: "United Kingdom", code: "GB", flagEmoji: "🇬🇧"),
-  Country(name: "Australia", code: "AU", flagEmoji: "🇦🇺"),
-  Country(name: "Germany", code: "DE", flagEmoji: "🇩🇪"),
-  Country(name: "Japan", code: "JP", flagEmoji: "🇯🇵"),
-  // Add more countries
-];

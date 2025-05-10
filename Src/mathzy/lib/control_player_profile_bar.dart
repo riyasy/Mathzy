@@ -1,4 +1,5 @@
 // lib/player_profile_bar.dart
+import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:mathzy/app_data.dart'; // For avatar and country data
 // To potentially fetch data if needed directly, or pass it
@@ -6,7 +7,7 @@ import 'package:mathzy/app_data.dart'; // For avatar and country data
 class PlayerProfileBar extends StatelessWidget {
   final String? userName;
   final int? avatarIndex;
-  final String? countryCode;
+  final String? countryCodeISO;
   final VoidCallback onEditProfile;
   final bool useIconPlaceholdersForAvatar; // From WelcomeScreen for consistency
 
@@ -14,7 +15,7 @@ class PlayerProfileBar extends StatelessWidget {
     super.key,
     required this.userName,
     this.avatarIndex,
-    this.countryCode,
+    this.countryCodeISO,
     required this.onEditProfile,
     this.useIconPlaceholdersForAvatar = true, // Match WelcomeScreen's default
   });
@@ -39,11 +40,33 @@ class PlayerProfileBar extends StatelessWidget {
   }
 
   Widget _getFlagWidget() {
-    if (countryCode != null && countryCode!.isNotEmpty) {
-      final country = kAppCountries.firstWhere((c) => c.code == countryCode, orElse: () => kAppCountries.first); // Fallback needed
-      // A simple way to find, but might be slow if kAppCountries is huge. Consider a map.
-      return Text(country.flagEmoji, style: const TextStyle(fontSize: 20));
+    if (countryCodeISO != null && countryCodeISO!.isNotEmpty) {
+      try {
+        // Attempt to get CountryCode object to access its flagUri
+        // This is a bit of a workaround as the picker is UI, not just data access.
+        // The package primarily uses CountryCode for its internal display.
+        // A more direct way would be if the package exposed a static method
+        // to get flag URI from ISO code.
+        
+        // For direct flag display using the package's assets, if the CountryCode
+        // object provides a direct path to its flag asset, you can use it.
+        // Example: if CountryCode object has a flagUri property:
+        final country = CountryCode.fromCountryCode(countryCodeISO!); // May throw if code not found
+        if (country.flagUri != null) {
+           return Image.asset(
+             country.flagUri!,
+             package: 'country_code_picker',
+             width: 28,
+             height: 20,
+             fit: BoxFit.contain,
+             errorBuilder: (context, error, stackTrace) => const Icon(Icons.public, size: 22, color: Colors.black54),
+           );
         }
+      } catch (e) {
+        // Fallback if code not found or other error
+        // print("Error getting flag for $countryCodeISO: $e");
+      }
+    }
     return const Icon(Icons.public, size: 22, color: Colors.black54); // Default global icon
   }
 
@@ -57,27 +80,25 @@ class PlayerProfileBar extends StatelessWidget {
           bottom: BorderSide(color: Colors.grey.shade300, width: 0.5),
         ),
       ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: onEditProfile,
-            child: CircleAvatar(
-              radius: 18,
+      child: GestureDetector(
+        onTap: onEditProfile,
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
               backgroundColor: Colors.grey.shade300,
               child: _getAvatarWidget(),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
+            const SizedBox(width: 10),
+            Text(
               userName ?? 'Player', // Default name
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
               overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(width: 10),
-          _getFlagWidget(),
-        ],
+            const SizedBox(width: 10),
+            _getFlagWidget(),
+          ],
+        ),
       ),
     );
   }

@@ -4,7 +4,7 @@ class PreferencesService {
   static const String _keyIsFirstRun = 'mathzy_is_first_run_v2'; // Updated key
   static const String _keyUserName = 'mathzy_user_name';
   static const String _keyAvatarIndex = 'mathzy_avatar_index';
-  static const String _keyCountryCode = 'mathzy_country_code'; // e.g., "US", "IN"
+  static const String _keyCountryCode = 'mathzy_country_code_iso'; // e.g., "US", "IN"
 
   Future<bool> isFirstRun() async {
     final prefs = await SharedPreferences.getInstance();
@@ -36,14 +36,20 @@ class PreferencesService {
     return prefs.getInt(_keyAvatarIndex);
   }
 
-  Future<void> saveCountryCode(String code) async {
+  Future<void> saveCountryCode(String code) async { // Takes ISO code string
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyCountryCode, code);
   }
 
-  Future<String?> getCountryCode() async {
+  Future<String?> getCountryCode() async { // Returns ISO code string
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyCountryCode);
+  }
+
+    // New method to clear the country code
+  Future<void> clearCountryCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyCountryCode); // Use the public/consistent key
   }
 
   // For testing purposes

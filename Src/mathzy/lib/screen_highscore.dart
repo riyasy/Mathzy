@@ -16,12 +16,7 @@ class HighScoreScreen extends StatelessWidget {
     final Future<void> initFuture = highScoreService.init();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Top 10 High Scores'),
-        backgroundColor: Theme.of(context).primaryColor,
-        iconTheme: IconThemeData(color: Theme.of(context).appBarTheme.titleTextStyle?.color ?? Colors.black),
-        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle,
-      ),
+      appBar: AppBar(title: const Text('Top 10 High Scores')),
       body: FutureBuilder<void>(
         future: initFuture, // Wait for service initialization
         builder: (context, snapshot) {
@@ -29,7 +24,11 @@ class HighScoreScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             // print("Error initializing HighScoreService for screen: ${snapshot.error}");
-            return Center(child: Text('Error loading scores: ${snapshot.error}. Please try again.'));
+            return Center(
+              child: Text(
+                'Error loading scores: ${snapshot.error}. Please try again.',
+              ),
+            );
           }
 
           // After init, get the scores
@@ -39,39 +38,73 @@ class HighScoreScreen extends StatelessWidget {
             return const Center(child: Text('No high scores yet. Go play!'));
           }
 
-          return LayoutBuilder( // Use LayoutBuilder for responsive table
+          return LayoutBuilder(
+            // Use LayoutBuilder for responsive table
             builder: (context, constraints) {
-              return SingleChildScrollView( // For vertical scrolling
+              return SingleChildScrollView(
+                // For vertical scrolling
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Center( // Center the table if it's narrower than the screen
+                  child: Center(
+                    // Center the table if it's narrower than the screen
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(minWidth: constraints.maxWidth > 500 ? 500 : constraints.maxWidth * 0.95), // Ensure a min width or take most of screen
+                      constraints: BoxConstraints(
+                        minWidth:
+                            constraints.maxWidth > 500
+                                ? 500
+                                : constraints.maxWidth * 0.95,
+                      ), // Ensure a min width or take most of screen
                       child: DataTable(
                         columnSpacing: 16.0,
-                        headingRowColor: MaterialStateProperty.all(Colors.blueGrey.shade100),
                         columns: const [
-                          DataColumn(label: Text('Rank', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Time (s)', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
-                          DataColumn(label: Text('Date Achieved', style: TextStyle(fontWeight: FontWeight.bold))),
+                          DataColumn(
+                            label: Text(
+                              'Rank',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Time (s)',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            //numeric: true,
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Date Achieved',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
                         ],
-                        rows: scores.asMap().entries.map((entry) {
-                          int rank = entry.key + 1;
-                          HighScoreEntry scoreData = entry.value;
-                          return DataRow(
-                            cells: [
-                              DataCell(Text('$rank.')),
-                              DataCell(Text(scoreData.timeTaken.toStringAsFixed(2))),
-                              DataCell(Text(DateFormat('MMM d, yyyy HH:mm').format(scoreData.dateAchieved))),
-                            ],
-                          );
-                        }).toList(),
+                        rows:
+                            scores.asMap().entries.map((entry) {
+                              int rank = entry.key + 1;
+                              HighScoreEntry scoreData = entry.value;
+                              return DataRow(
+                                cells: [
+                                  DataCell(Text('$rank')),
+                                  DataCell(
+                                    Text(
+                                      scoreData.timeTaken.toStringAsFixed(2),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      DateFormat(
+                                        'MMM d, yyyy HH:mm',
+                                      ).format(scoreData.dateAchieved),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
                       ),
                     ),
                   ),
                 ),
               );
-            }
+            },
           );
         },
       ),

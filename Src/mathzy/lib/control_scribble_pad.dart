@@ -53,10 +53,12 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
   );
   final mlkit.DigitalInkRecognizerModelManager _modelManager =
       mlkit.DigitalInkRecognizerModelManager();
-  bool _isScribbleModelReady = false; // Renamed for clarity within this widget
+  bool _isScribbleModelReady = false;
   final List<Offset> _points = [];
   Timer? _autoSubmitTimer;
   bool _isProcessing = false;
+  bool _hasUserStartedDrawingThisSession =
+      false; // New state variable for the hint
 
   @override
   void initState() {
@@ -67,10 +69,20 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
   @override
   void didUpdateWidget(ScribbleInputControl oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If the control becomes inactive, clear points and cancel timer
+    // If the control becomes inactive, clear points, cancel timer, and reset drawing session flag
     if (!widget.isActive && oldWidget.isActive) {
       _cancelAutoSubmitTimer();
-      setState(() => _points.clear());
+      setState(() {
+        _points.clear();
+        _hasUserStartedDrawingThisSession = false; // Reset when inactive
+      });
+    }
+    // If the control becomes active (and wasn't before), reset drawing session flag
+    // This ensures the hint shows for each new question/activation.
+    if (widget.isActive && !oldWidget.isActive) {
+      setState(() {
+        _hasUserStartedDrawingThisSession = false;
+      });
     }
   }
 
@@ -87,7 +99,7 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
       if (!downloaded && mounted) {
         print("Scribble model needs download...");
         await _modelManager.downloadModel('en', isWifiRequired: false);
-        downloaded = true; // Assume success if no error
+        downloaded = true;
         print("Scribble model downloaded.");
       } else if (downloaded) {
         print("Scribble model already available.");
@@ -96,9 +108,7 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
     } catch (e) {
       print("Error checking/downloading scribble model: $e");
       if (mounted) {
-        setState(
-          () => _isScribbleModelReady = false,
-        ); // Mark as not ready on error
+        setState(() => _isScribbleModelReady = false);
       }
     }
   }
@@ -117,12 +127,17 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
     _cancelAutoSubmitTimer();
     setState(() {
       _points.add(details.localPosition);
+      _hasUserStartedDrawingThisSession = true; // User has started drawing
     });
   }
 
   void _handlePanUpdate(DragUpdateDetails details) {
     if (!widget.isActive || !_isScribbleModelReady || _isProcessing) return;
     _cancelAutoSubmitTimer();
+    // Ensure _hasUserStartedDrawingThisSession is true if somehow missed in onPanStart
+    if (!_hasUserStartedDrawingThisSession) {
+      _hasUserStartedDrawingThisSession = true;
+    }
     setState(() {
       _points.add(details.localPosition);
     });
@@ -144,6 +159,7 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
   String _processScribbleCandidates(
     List<mlkit.RecognitionCandidate> candidates,
   ) {
+    // ... (your existing processing logic remains the same)
     final pat = RegExp(r'^[0-9<=>]+$');
     final map = {
       'Z': '2',
@@ -178,7 +194,7 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
         proc = sb.toString();
       }
       if (pat.hasMatch(proc)) {
-        double curScr = c.score;
+        double curScr = c.score ?? 0.0; // Handle null score
         if (curScr > bestScr) {
           bestScr = curScr;
           best = proc;
@@ -187,10 +203,10 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
         }
       }
     }
-    if (best.isEmpty) {
-      if (pat.hasMatch(candidates.first.text)) {
-        best = candidates.first.text;
-      }
+    if (best.isEmpty &&
+        candidates.isNotEmpty &&
+        pat.hasMatch(candidates.first.text)) {
+      best = candidates.first.text;
     }
     return best.isEmpty ? '?' : best;
   }
@@ -205,7 +221,8 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
     bool hasActualDrawing = _points.any((p) => p != Offset.zero);
     if (!hasActualDrawing) {
       _points.clear();
-      setState(() {});
+      if (mounted)
+        setState(() {}); // Ensure UI updates if points were just cleared
       return;
     }
 
@@ -215,7 +232,16 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
     final ink = mlkit.Ink();
     var stroke = mlkit.Stroke();
     final pointsCopy = List<Offset>.from(_points);
-    if (mounted) setState(() => _points.clear()); // Clear UI immediately
+    if (mounted) {
+      setState(() {
+        _points.clear();
+        // _hasUserStartedDrawingThisSession will be reset in didUpdateWidget
+        // when isActive changes, or when a new question effectively starts.
+        // Or, if you want the hint to reappear for the *next* stroke of the *same* question
+        // after a submission, you'd reset it here too.
+        // For now, it resets when the question/active state changes.
+      });
+    }
 
     for (var p in pointsCopy) {
       if (p != Offset.zero) {
@@ -260,6 +286,7 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
   Widget build(BuildContext context) {
     Color bgColor = widget.isActive ? Colors.white : Colors.grey[300]!;
     Widget? overlayChild;
+
     if (!_isScribbleModelReady) {
       overlayChild = Center(
         child: Text(
@@ -274,6 +301,18 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
         child: Text(
           "Scribble disabled",
           style: TextStyle(color: Colors.grey[600]),
+        ),
+      );
+    } else if (widget.isActive && !_hasUserStartedDrawingThisSession) {
+      // New condition for hint
+      overlayChild = Center(
+        child: Text(
+          "Draw the answer here",
+          style: TextStyle(
+            fontSize: 18,
+            color: Colors.blueGrey.shade400,
+            fontStyle: FontStyle.italic,
+          ),
         ),
       );
     }
@@ -296,7 +335,7 @@ class _ScribbleInputControlState extends State<ScribbleInputControl> {
                   top: BorderSide(color: Colors.blueGrey.shade300, width: 1),
                 ),
               ),
-              child: overlayChild, // Show loading/disabled state
+              child: overlayChild, // Show hint or other overlays
             ),
           ),
         );
