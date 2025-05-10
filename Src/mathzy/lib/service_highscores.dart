@@ -62,7 +62,7 @@ class HighScoreService {
     }
   }
 
-  Future<bool> addScore(double timeTaken) async {
+Future<bool> addScore(double timeTaken) async {
     if (!_isInitialized) await init(); // Ensure initialized
 
     final newEntry = HighScoreEntry(timeTaken: timeTaken, dateAchieved: DateTime.now());
@@ -71,21 +71,17 @@ class HighScoreService {
     _scores.add(newEntry);
     _scores.sort((a, b) => a.timeTaken.compareTo(b.timeTaken)); // Sort by time (ascending)
 
-    bool madeItToList = true; // Assume it made it initially
+    // Check if the new entry is the best (lowest time, at index 0)
+    bool isBest = _scores.isNotEmpty && _scores[0] == newEntry;
 
     // If more than max scores, trim the list
     if (_scores.length > _maxHighScores) {
-      // Check if the new entry is still in the list after trimming
-      // (it would be if it's better than what was previously the Nth score)
-      if (_scores.indexOf(newEntry) >= _maxHighScores) {
-         madeItToList = false; // It was added but trimmed out
-      }
       _scores = _scores.sublist(0, _maxHighScores);
     }
     
     await _saveScores();
-    return madeItToList; // Return true if the score is now in the top list
-  }
+    return isBest; // Return true only if the score is the best
+}
 
   List<HighScoreEntry> getTopScores() {
     // Ensure scores are loaded if accessed before init (though init should be called early)

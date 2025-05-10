@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 final List<String> kAvatarAssetPaths = List.generate(9, (index) => 'assets/avatars/avatar_${index + 1}.png');
 // For simplicity, if you don't have assets yet, use Icons:
 final List<IconData> kPlaceholderAvatars = [
-  Icons.face_retouching_natural, Icons.face, Icons.account_circle,
-  Icons.tag_faces, Icons.person_outline, Icons.emoji_emotions,
-  Icons.face_2_outlined, Icons.face_3_outlined, Icons.face_4_outlined,
+  Icons.account_circle, Icons.face, Icons.face_2,
+  Icons.face_3, Icons.face_4, Icons.face_5,
+  Icons.face_6, Icons.tag_faces, Icons.face_4_outlined,
 ];
 
 

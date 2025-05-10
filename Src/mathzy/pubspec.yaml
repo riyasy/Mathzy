@@ -10,12 +10,13 @@ dependencies:
   flutter:
     sdk: flutter
   google_mlkit_digital_ink_recognition: ^0.14.1
-  confetti: ^0.7.0
   google_fonts: ^6.2.1 
   speech_to_text: ^7.0.0
   shared_preferences: ^2.2.2 
-  intl: ^0.18.1        
+  intl: ^0.20.2        
   country_code_picker: ^3.0.0 
+  material_dialogs: ^1.0.0
+  lottie: ^3.3.1
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +25,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/

@@ -1,6 +1,7 @@
 // main.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:mathzy/constants.dart';
 import 'package:mathzy/game_logic.dart';
 import 'package:mathzy/screen_highscore.dart';
@@ -10,6 +11,7 @@ import 'package:mathzy/control_voice_input.dart';
 import 'package:mathzy/service_highscores.dart';
 import 'package:mathzy/screen_welcome.dart';
 import 'package:mathzy/control_player_profile_bar.dart';
+import 'package:material_dialogs/material_dialogs.dart';
 
 const String kInitialInstructionText = "Press Start to Play!";
 
@@ -33,7 +35,8 @@ class MathScribbleGameApp extends StatelessWidget {
     return MaterialApp(
       title: 'Mathzy',
       theme: ThemeData(
-        primarySwatch: Colors.blueGrey,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
         visualDensity: VisualDensity.adaptivePlatformDensity,
         appBarTheme: AppBarTheme(
           titleTextStyle: TextStyle(
@@ -237,30 +240,51 @@ class _MathScribbleGameState extends State<MathScribbleGame> {
           String alertMessage =
               'You answered $kTargetCorrectAnswers questions correctly in ${finalTime.toStringAsFixed(2)} seconds!';
           if (newHighScoreAchieved) {
-            alertMessage += '\n\n🎉🎉  Congratulations! 🎉🎉 \n\n New High Score 🏆 !';
+            alertMessage +=
+                '\n\nNew High Score achieved🏆 !';
           }
 
-          showDialog(
+          Dialogs.materialDialog(
+            color: Colors.white,
+            msg: alertMessage,
+            title: newHighScoreAchieved ? 'Congrats!' : 'Challenge Complete!',
+            lottieBuilder: newHighScoreAchieved ? Lottie.asset(
+              'assets/cong_example.json',
+              fit: BoxFit.contain,
+            ) : null,
             context: context,
-            barrierDismissible: false,
-            builder:
-                (_) => AlertDialog(
-                  title: Text('Challenge Complete!'),
-                  content: Text(
-                    alertMessage, // Use the dynamically generated message
-                    textAlign: TextAlign.center, // Optional: center the text
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _resetGame();
-                      },
-                      child: Text('Play Again'),
-                    ),
-                  ],
-                ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _resetGame();
+                },
+                child: Text('Play Again'),
+              ),
+            ],
           );
+
+          // showDialog(
+          //   context: context,
+          //   barrierDismissible: false,
+          //   builder:
+          //       (_) => AlertDialog(
+          //         title: Text('Challenge Complete!'),
+          //         content: Text(
+          //           alertMessage, // Use the dynamically generated message
+          //           textAlign: TextAlign.center, // Optional: center the text
+          //         ),
+          //         actions: [
+          //           TextButton(
+          //             onPressed: () {
+          //               Navigator.pop(context);
+          //               _resetGame();
+          //             },
+          //             child: Text('Play Again'),
+          //           ),
+          //         ],
+          //       ),
+          // );
         }
       });
     } else if (_isGameActive) {

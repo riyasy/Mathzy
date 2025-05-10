@@ -202,6 +202,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 const SizedBox(height: 10),
                 TextFormField(
                   controller: _nameController,
+                  style: const TextStyle(fontSize: 24),
                   decoration: InputDecoration(
                     // labelText: 'Your Name*',
                     hintText: 'Your Name - E.g., Alex',

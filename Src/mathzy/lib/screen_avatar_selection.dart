@@ -23,12 +23,6 @@ class AvatarSelectionScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Optional: Add button for "No Avatar" or similar
-            // TextButton(
-            //   onPressed: () => Navigator.pop(context, -1), // Use -1 or null for no avatar
-            //   child: Text("Skip / No Avatar"),
-            // ),
-            // SizedBox(height: 10),
             Expanded(
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -75,20 +69,30 @@ class AvatarSelectionScreen extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: ElevatedButton(
+              padding: const EdgeInsets.symmetric(vertical: 20.0),
+                child:ElevatedButton(
                 onPressed: () {
-                  // This button could confirm the selection if needed, or just rely on tap.
-                  // For this UI, tap is enough, so this button might be redundant
-                  // unless you want a clear "Done" action on this screen.
-                  // If relying on tap, it will pop automatically.
-                  // If currentAvatarIndex is null, this might pop with null or a default.
                   Navigator.pop(context, currentAvatarIndex);
                 },
-                style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12)),
-                child: const Text('Done'),
-              ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColorDark,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 15,
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Done',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
             )
           ],
         ),
